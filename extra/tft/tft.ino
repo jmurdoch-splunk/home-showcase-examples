@@ -22,10 +22,8 @@
 #include <Adafruit_GFX.h>
 #include <SPI.h> // For acceleration vs GPIO
 
-// ESP32Encoder by Kevin Harrington
-// https://github.com/madhephaestus/ESP32Encoder/
-#include <ESP32Encoder.h>
-#include <InterruptEncoder.h>
+// For demo
+#include "src/QRCode/qrcode.h"
 
 // TFT Screens
 #define VSPI_ALTERNATE
@@ -53,12 +51,6 @@ Adafruit_GC9A01A *tft = NULL;
 Adafruit_ILI9341 *tft = NULL;
 #endif
 
-ESP32Encoder encoder;
-int value_current = 20;
-int value_previous = 20;
-int value_max = 30;
-int value_min = 12;
-
 TwoWire I2C_INT = TwoWire(0);
 TwoWire I2C_EXT = TwoWire(1);
 
@@ -78,66 +70,52 @@ void drawString(char *text) {
     tft->print(text);
 }
 
-int64_t *scanRotary(void) {
-    int64_t *value = NULL;
+void drawQRCode(int qrVer, bool circular_fit, const char *text) {
+    QRCode qrcode;
+    uint8_t qrcodeData[qrcode_getBufferSize(qrVer)];
+    uint16_t colour;
 
-    value_current = encoder.getCount();
-    if (value_current != value_previous) {
-        if (value_current > value_max ) {
-            encoder.setCount(value_max);
-        } else if (value_current  < value_min) {
-            encoder.setCount(value_min);
-        } else {
-            value_previous = value_current;
-            value = (int64_t *)malloc(sizeof *value);
-            *value = value_current;
-            // Bleep when changed
-            tone(BUZZER, 1000, 150);
+    // Build the QRCode
+    qrcode_initText(&qrcode, qrcodeData, qrVer, 0, text);
+
+    // Get the QR Dimensions in terms of pixels
+    int qrDim = 4 * qrVer + 17;
+
+    // Get the maximal box size that will fit on the screen and borders
+    int qrBox = tft->width() > tft->height() ? tft->height() : tft->width();
+    // use pythagoras theorem to get the width of a square, if circular
+    qrBox = circular_fit ? sqrt(qrBox * qrBox / 2.0) : qrBox;
+    int qrTop = (tft->height() - qrBox) / 2;
+    int qrLeft = (tft->width() - qrBox) / 2;
+
+    // Get the maximum feasible pixel size
+    int qrPix = qrBox / qrDim;
+
+    // Mandatory QR Code gap
+    int qrGap = (qrBox - (qrDim * qrPix)) / 2;
+
+    // Background
+    tft->fillScreen(ST77XX_WHITE);
+
+    // Now print the QRCode
+    for (int x = 0; x < qrDim; x++) {
+        for (int y = 0; y < qrDim; y++) { 
+            // Decide whether it's a filled pixel
+            if (qrcode_getModule(&qrcode, x, y)) {
+                colour = ST7735_BLACK;
+            } else {
+                // probably don't need this if it's all white
+                colour = ST7735_WHITE;
+            }
+            /*
+             * Draw the pixel:
+             * - using the borders
+             * - 
+             */
+            tft->fillRect(qrLeft + qrGap + (x * qrPix), qrTop + qrGap + (y * qrPix), qrPix, qrPix, colour);
         }
     }
-    return value;
-}
 
-void processRotary(int64_t *value, char *sourcetype) {
-    if (value != NULL) {
-        // How much memory do we have (for detecting memory leaks)
-        Serial.print(F("Free Heap: "));
-        Serial.println(ESP.getFreeHeap());
-        Serial.println(*value);
-
-        // TFT
-        char text[sizeof(int)*8+1];
-        drawString(itoa(*value, text, DEC));
-
-        // Event
-        char *event = NULL;
-        asprintf(&event, "themostat=%d", *value);
-        char *hecjson = makeHECJSON(event, sourcetype);
-        Serial.println(hecjson);
-        sendHEC(HEC_HOST, HEC_PORT, HEC_URI, HEC_TOKEN, (uint8_t *)hecjson, strlen(hecjson));
-        free(event);
-        free(hecjson);
-
-        // Metric
-        uint8_t payloadData[MAX_PROTOBUF_BYTES] = { 0 };
-        Resourceptr ptr = NULL;
-        ptr = addOteldata();
-
-        addResAttr(ptr, "service.name", "splunk-home");
-
-        addMetric(ptr, "thermostat", "Thermostat setting", "1", METRIC_GAUGE, 0, 0);
-        addDatapoint(ptr, AS_INT, value);
-        addDpAttr(ptr,"sensor","Rotary Encoder");
-
-        printOteldata(ptr);
-        size_t payloadSize = buildProtobuf(ptr, payloadData, MAX_PROTOBUF_BYTES);
-        // Send the data if there's something there
-        if(payloadSize > 0) {
-            // Please set OTEL_SSL in the header
-            sendProtobuf(OTEL_HOST, OTEL_PORT, OTEL_URI, OTEL_XSFKEY, payloadData, payloadSize);
-        }
-        freeOteldata(ptr);
-    }
 }
 
 void setup() {
@@ -159,14 +137,6 @@ void setup() {
     // NTP Sync - need it for OpenTelemetry
     setHWClock(NTP_HOST);
     Serial.println(F("NTP Synced"));
-
-    /*
-     * Now the custom part - here we want to take readings from this
-     */
-    // encoder.attachHalfQuad(GPIO_NUM_41, GPIO_NUM_40);
-    encoder.attachSingleEdge(GPIO_NUM_41, GPIO_NUM_40);
-    encoder.setCount(value_current);
-    // encoder.setFilter(1023);
 
     /*
      * Showcase the display - faster speeds if Hardware SPI used
@@ -202,13 +172,13 @@ void setup() {
     // Switch on the backlight    
     pinMode(TFT_BL, OUTPUT);
     analogWrite(TFT_BL, 230);
-
-    // Print something on the screen
-    char text[sizeof(int)*8+1];
-    drawString(itoa(value_current, text, DEC));
 }
 
 void loop() {
-    uint64_t *value = NULL;
-    processRotary(scanRotary(), "thermostat");
+    drawString("88");
+    delay(10000);
+
+    // Print a version 3 QR Code on screen
+    drawQRCode(3, isCircle, "splunk.com");
+    delay(10000);
 }

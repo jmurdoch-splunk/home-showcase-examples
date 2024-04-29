@@ -2,6 +2,7 @@
 #define __SPLUNK_HEC_H_
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
+#include "../connection_details.h"
 
 char *makeHECJSON(const char *event, const char *sourcetype);
 

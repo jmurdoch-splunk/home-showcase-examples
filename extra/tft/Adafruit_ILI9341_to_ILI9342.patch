@@ -1,0 +1,40 @@
+--- Adafruit_ILI9341/Adafruit_ILI9341.h	2024-04-27 21:02:38.225269885 +0100
++++ Adafruit_ILI9341/Adafruit_ILI9341.h	2024-04-27 23:48:53.247587052 +0100
+@@ -42,8 +42,13 @@
+ #include <Adafruit_SPITFT.h>
+ #include <SPI.h>
+ 
++#if defined(ARDUINO_M5Stack_Core_ESP32)
++#define ILI9341_TFTWIDTH 320  ///< ILI9341 max TFT width
++#define ILI9341_TFTHEIGHT 240 ///< ILI9341 max TFT height
++#else
+ #define ILI9341_TFTWIDTH 240  ///< ILI9341 max TFT width
+ #define ILI9341_TFTHEIGHT 320 ///< ILI9341 max TFT height
++#endif
+ 
+ #define ILI9341_NOP 0x00     ///< No-op register
+ #define ILI9341_SWRESET 0x01 ///< Software reset register
+--- Adafruit_ILI9341/Adafruit_ILI9341.cpp	2024-04-27 21:08:31.555627059 +0100
++++ Adafruit_ILI9341/Adafruit_ILI9341.cpp	2024-04-27 23:54:20.713496810 +0100
+@@ -160,7 +160,11 @@
+   ILI9341_PWCTR2  , 1, 0x10,             // Power control SAP[2:0];BT[3:0]
+   ILI9341_VMCTR1  , 2, 0x3e, 0x28,       // VCM control
+   ILI9341_VMCTR2  , 1, 0x86,             // VCM control2
++#if defined(ARDUINO_M5Stack_Core_ESP32)
++  ILI9341_MADCTL  , 1, 0x08,             // Memory Access Control
++#else
+   ILI9341_MADCTL  , 1, 0x48,             // Memory Access Control
++#endif
+   ILI9341_VSCRSADD, 1, 0x00,             // Vertical scroll zero
+   ILI9341_PIXFMT  , 1, 0x55,
+   ILI9341_FRMCTR1 , 2, 0x00, 0x18,
+@@ -240,6 +244,9 @@
+     _height = ILI9341_TFTWIDTH;
+     break;
+   }
++#if defined(ARDUINO_M5Stack_Core_ESP32)
++  m ^= MADCTL_MX;
++#endif
+ 
+   sendCommand(ILI9341_MADCTL, &m, 1);
+ }

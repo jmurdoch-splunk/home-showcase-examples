@@ -24,6 +24,7 @@ This has been tested with M5Stack: ATOM, ATOMS3 (inc Lite), M5Stick Plus2 and M5
 | CO2L  | Temperature, Humidity & CO2 | SCD41 | I2C | 0x62 | Metric |
 | Earth Moisture | Soil Moisture | | GPIO | | Metric |
 | Env III | Temperature & Humidity | SHT30 | I2C | 0x44 | Metric |
+| 24GHz mmWave | Human Static Presence Lite | MR24HPC1 | UART | | Metric / Event |
 | IMU | Acceleration & Gyroscope | MPU6886 | I2C | 0x68 | Metric |
 | PIR | Infrared Movement | | GPIO | | Metric / Event |
 | QR-Code 1.1 | QR & Barcode Reader | SSI-based | UART | | Event |

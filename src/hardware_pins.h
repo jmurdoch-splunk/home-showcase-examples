@@ -135,4 +135,41 @@
 
 #endif
 
+#ifdef ARDUINO_M5Stack_Core_ESP32
+#define HAS_ONBOARD_LCD 1
+#define HAS_ONBOARD_IMU 1
+
+// #define IR_TX       GPIO_NUM_4
+#define BUTTON      GPIO_NUM_39
+#define BUTTONB     GPIO_NUM_38
+#define BUTTONC     GPIO_NUM_37
+#define BUZZER      GPIO_NUM_25
+
+#define GROVE_GPIO_WHITE    GPIO_NUM_36 // Typically an Arduino input
+#define GROVE_GPIO_YELLOW   GPIO_NUM_26 // Typically an Arduino output
+#define GROVE_UART_TXD      GPIO_NUM_17
+#define GROVE_UART_RXD      GPIO_NUM_16
+#define GROVE_I2C_SCL       GPIO_NUM_22
+#define GROVE_I2C_SDA       GPIO_NUM_21
+
+#define SOCKET_I2C_SCL      GPIO_NUM_22
+#define SOCKET_I2C_SDA      GPIO_NUM_21
+#define SOCKET_SPI_SCK      -1
+#define SOCKET_SPI_SS       -1
+#define SOCKET_SPI_MISO     -1
+#define SOCKET_SPI_MOSI     -1
+
+// ILI9342C
+#define TFT_SPI      SPI
+#define TFT_SCLK     SCK // SCK - 18
+#define TFT_MOSI     MOSI // MOSI - 23
+
+#define TFT_CS     GPIO_NUM_14 // CS / SS - 14
+#define TFT_DC     GPIO_NUM_27 // DC / RS
+#define TFT_RST    GPIO_NUM_33 // RST / Reset
+
+#define TFT_BL      GPIO_NUM_32 // BL / Backlight
+
+#endif
+
 #endif
