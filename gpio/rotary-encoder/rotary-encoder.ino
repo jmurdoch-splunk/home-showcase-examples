@@ -82,19 +82,20 @@ int64_t *scanRotary(void) {
     int64_t *value = NULL;
 
     value_current = encoder.getCount();
-    if (value_current != value_previous) {
-        if (value_current > value_max ) {
-            encoder.setCount(value_max);
-        } else if (value_current  < value_min) {
-            encoder.setCount(value_min);
-        } else {
-            value_previous = value_current;
-            value = (int64_t *)malloc(sizeof *value);
-            *value = value_current;
-            // Bleep when changed
-            tone(BUZZER, 1000, 150);
-        }
+    if (value_current > value_max ) {
+        encoder.setCount(value_max);
+    } else if (value_current  < value_min) {
+        encoder.setCount(value_min);
+    } else if (value_current != value_previous) {
+        // Update TFT when changed
+        char text[sizeof(int)*8+1];
+        drawString(itoa(value_current, text, DEC));
+        // Bleep when changed
+        tone(BUZZER, 1000, 150);
+        value_previous = value_current;
     }
+    value = (int64_t *)malloc(sizeof *value);
+    *value = encoder.getCount();
     return value;
 }
 
@@ -104,10 +105,6 @@ void processRotary(int64_t *value, char *sourcetype) {
         Serial.print(F("Free Heap: "));
         Serial.println(ESP.getFreeHeap());
         Serial.println(*value);
-
-        // TFT
-        char text[sizeof(int)*8+1];
-        drawString(itoa(*value, text, DEC));
 
         // Event
         char *event = NULL;
@@ -209,6 +206,6 @@ void setup() {
 }
 
 void loop() {
-    uint64_t *value = NULL;
     processRotary(scanRotary(), "thermostat");
+    delay(1000);
 }

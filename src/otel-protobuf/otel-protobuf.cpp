@@ -175,11 +175,11 @@ bool ScopeMetrics_encode_metric(pb_ostream_t *ostream, const pb_field_iter_t *fi
          * A stateful counter would be cumulative, as it increments the value
          * Here we use a delta, to indicate to increment by 1 at each pulse
          */
-        if (metric.which_data = METRIC_GAUGE) {
+        if (metric.which_data == METRIC_GAUGE) {
             metric.which_data = Metric_gauge_tag;
             metric.data.gauge.data_points.arg = metricptr->dpHead;
             metric.data.gauge.data_points.funcs.encode = Gauge_encode_data_points;
-        } else if (metric.which_data = METRIC_SUM) {
+        } else if (metric.which_data == METRIC_SUM) {
             metric.which_data = Metric_sum_tag;
             metric.data.sum.is_monotonic = metricptr->monotonic;
             // Cumulative if we pass a persistent, incrementing value
